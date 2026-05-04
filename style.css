@@ -67,8 +67,8 @@ html, body {
 /* ── SVG RESET RING ── */
 .reset-ring {
   position: absolute;
-  width: 290px;
-  height: 290px;
+  width: 330px;
+  height: 330px;
   transform: rotate(-90deg);
   pointer-events: none;
   z-index: 2;
@@ -85,8 +85,8 @@ html, body {
   stroke: var(--red);
   stroke-width: 5;
   stroke-linecap: round;
-  stroke-dasharray: 829; /* 2π × 132 */
-  stroke-dashoffset: 829;
+  stroke-dasharray: 955; /* 2π × 152 */
+  stroke-dashoffset: 955;
   transition: stroke-dashoffset 0.05s linear;
   opacity: 0;
 }
@@ -97,8 +97,8 @@ html, body {
 
 /* ── BIG BUTTON ── */
 .total-btn {
-  width: 260px;
-  height: 260px;
+  width: 300px;
+  height: 300px;
   border-radius: 50%;
   border: none;
   cursor: pointer;

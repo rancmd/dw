@@ -11,8 +11,8 @@ const totalBtn       = document.getElementById('totalBtn');
 const toast          = document.getElementById('toast');
 const resetRingFill  = document.getElementById('resetRingFill');
 
-// SVG circle circumference: 2π × r = 2π × 132 ≈ 829
-const CIRCUMFERENCE = 2 * Math.PI * 132;
+// SVG circle circumference: 2π × r = 2π × 152 ≈ 955
+const CIRCUMFERENCE = 2 * Math.PI * 152;
 
 let entries      = [];
 let touchStartTime = null;
