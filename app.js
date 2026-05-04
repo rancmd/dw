@@ -134,9 +134,13 @@ function clearRing() {
 }
 
 function animateRing(startTime) {
-  resetRingFill.classList.add('active');
   const elapsed = performance.now() - startTime;
-  const pct = Math.min(elapsed / HOLD_DURATION, 1);
+  if (elapsed < 1000) {
+    rafId = requestAnimationFrame(() => animateRing(startTime));
+    return;
+  }
+  resetRingFill.classList.add('active');
+  const pct = Math.min((elapsed - 1000) / (HOLD_DURATION - 1000), 1);
   setRingProgress(pct);
   if (pct < 1) {
     rafId = requestAnimationFrame(() => animateRing(startTime));

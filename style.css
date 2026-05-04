@@ -136,8 +136,9 @@ html, body {
 
 .amount-wrap {
   display: flex;
-  align-items: baseline;
-  gap: 5px;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 4px;
 }
 
 .amount {
@@ -152,9 +153,17 @@ html, body {
 .currency {
   font-size: 26px;
   font-weight: 700;
-  color: var(--text-muted);
-  padding-top: 8px;
-  align-self: flex-start;
+  color: var(--text);
+  padding-bottom: 8px;
+}
+
+.currency-ghost {
+  font-size: 26px;
+  font-weight: 700;
+  color: transparent;
+  padding-bottom: 8px;
+  pointer-events: none;
+  visibility: hidden;
 }
 
 /* ── LOG SECTION — remaining 30% ── */
