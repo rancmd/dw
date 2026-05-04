@@ -88,6 +88,11 @@ html, body {
   stroke-dasharray: 829; /* 2π × 132 */
   stroke-dashoffset: 829;
   transition: stroke-dashoffset 0.05s linear;
+  opacity: 0;
+}
+
+.reset-ring-fill.active {
+  opacity: 1;
 }
 
 /* ── BIG BUTTON ── */
@@ -136,11 +141,11 @@ html, body {
 }
 
 .amount {
-  font-size: 72px;
+  font-size: 88px;
   font-weight: 800;
   line-height: 1;
   color: var(--text);
-  letter-spacing: -2px;
+  letter-spacing: -4px;
   transition: color 0.25s ease, transform 0.2s ease;
 }
 
@@ -148,7 +153,8 @@ html, body {
   font-size: 26px;
   font-weight: 700;
   color: var(--text-muted);
-  padding-bottom: 6px;
+  padding-top: 8px;
+  align-self: flex-start;
 }
 
 /* ── LOG SECTION — remaining 30% ── */
@@ -186,13 +192,23 @@ html, body {
   flex: 1;
   overflow-y: auto;
   list-style: none;
-  padding: 0 24px 8px;
+  padding: 0 8px 8px 24px;
   -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
+  scrollbar-width: thin;
+  scrollbar-color: #d0d0d0 transparent;
 }
 
 .log-list::-webkit-scrollbar {
-  display: none;
+  width: 3px;
+}
+
+.log-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.log-list::-webkit-scrollbar-thumb {
+  background: #d0d0d0;
+  border-radius: 99px;
 }
 
 .log-empty {
@@ -230,7 +246,7 @@ html, body {
 .log-amount {
   font-size: 14px;
   font-weight: 700;
-  color: var(--green);
+  color: var(--text);
 }
 
 /* ── TOAST ── */

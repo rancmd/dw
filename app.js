@@ -122,7 +122,6 @@ function showToast(msg) {
 
 // ── SVG ring animation ──
 function setRingProgress(pct) {
-  // pct 0→1: stroke-dashoffset goes from CIRCUMFERENCE→0
   const offset = CIRCUMFERENCE * (1 - pct);
   resetRingFill.style.strokeDashoffset = offset;
 }
@@ -131,9 +130,11 @@ function clearRing() {
   cancelAnimationFrame(rafId);
   rafId = null;
   resetRingFill.style.strokeDashoffset = CIRCUMFERENCE;
+  resetRingFill.classList.remove('active');
 }
 
 function animateRing(startTime) {
+  resetRingFill.classList.add('active');
   const elapsed = performance.now() - startTime;
   const pct = Math.min(elapsed / HOLD_DURATION, 1);
   setRingProgress(pct);
