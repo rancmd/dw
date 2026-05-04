@@ -15,18 +15,21 @@
 
     <header class="header">
       <div class="month-label" id="monthLabel"></div>
-      <div class="subtitle">tap to add · hold to reset</div>
     </header>
 
     <main class="main">
-      <button class="total-btn" id="totalBtn" aria-label="Add 20 shekel">
-        <span class="currency">₪</span>
-        <span class="amount" id="totalAmount">0</span>
-      </button>
+      <!-- SVG reset ring drawn around the button -->
+      <svg class="reset-ring" id="resetRingSvg" viewBox="0 0 280 280" xmlns="http://www.w3.org/2000/svg">
+        <circle class="reset-ring-track" cx="140" cy="140" r="132"/>
+        <circle class="reset-ring-fill" id="resetRingFill" cx="140" cy="140" r="132"/>
+      </svg>
 
-      <div class="ring-container">
-        <div class="ring" id="progressRing"></div>
-      </div>
+      <button class="total-btn" id="totalBtn" aria-label="Add 20 shekel">
+        <span class="amount-wrap">
+          <span class="amount" id="totalAmount">0</span>
+          <span class="currency">₪</span>
+        </span>
+      </button>
     </main>
 
     <section class="log-section">
@@ -35,17 +38,13 @@
         <span class="log-count" id="logCount">0 entries</span>
       </div>
       <ul class="log-list" id="logList">
-        <li class="log-empty" id="emptyState">No entries yet</li>
+        <li class="log-empty">No entries yet</li>
       </ul>
     </section>
 
   </div>
 
   <div class="toast" id="toast"></div>
-  <div class="reset-overlay" id="resetOverlay">
-    <div class="reset-progress" id="resetProgress"></div>
-    <span class="reset-label">Hold to reset…</span>
-  </div>
 
   <script src="app.js"></script>
 </body>

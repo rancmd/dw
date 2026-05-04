@@ -1,28 +1,31 @@
-const AMOUNT = 20;
-const STORAGE_KEY = 'moneylog_entries';
-const HOLD_DURATION = 1800; // ms to hold for reset
+const AMOUNT        = 20;
+const STORAGE_KEY   = 'moneylog_entries';
+const HOLD_DURATION = 1800; // ms
 
 // ── DOM refs ──
-const totalAmountEl = document.getElementById('totalAmount');
-const logList       = document.getElementById('logList');
-const logCount      = document.getElementById('logCount');
-const monthLabel    = document.getElementById('monthLabel');
-const totalBtn      = document.getElementById('totalBtn');
-const toast         = document.getElementById('toast');
-const resetOverlay  = document.getElementById('resetOverlay');
-const resetProgress = document.getElementById('resetProgress');
+const totalAmountEl  = document.getElementById('totalAmount');
+const logList        = document.getElementById('logList');
+const logCount       = document.getElementById('logCount');
+const monthLabel     = document.getElementById('monthLabel');
+const totalBtn       = document.getElementById('totalBtn');
+const toast          = document.getElementById('toast');
+const resetRingFill  = document.getElementById('resetRingFill');
 
-let entries = [];
-let holdTimer = null;
-let holdStart = null;
-let holdRafId = null;
-let toastTimer = null;
+// SVG circle circumference: 2π × r = 2π × 132 ≈ 829
+const CIRCUMFERENCE = 2 * Math.PI * 132;
+
+let entries      = [];
+let touchStartTime = null;
+let touchCompleted = false;
+let touchHoldTimer = null;
+let rafId          = null;
+let toastTimer     = null;
 
 // ── Init ──
 function init() {
   loadData();
   renderAll();
-  updateMonthLabel();
+  updateDateLabel();
 }
 
 // ── Storage ──
@@ -39,33 +42,32 @@ function saveData() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
 }
 
+// ── Date label ──
+function updateDateLabel() {
+  const now = new Date();
+  const day   = String(now.getDate()).padStart(2, '0');
+  const month = now.toLocaleString('en', { month: 'long' });
+  const year  = now.getFullYear();
+  monthLabel.textContent = `${day} ${month} ${year}`;
+}
+
 // ── Render ──
 function renderAll() {
   const total = entries.length * AMOUNT;
   totalAmountEl.textContent = total;
 
-  // Update ring rotation subtly based on entry count (cosmetic)
-  const ring = document.querySelector('.ring::after');
-  document.querySelector('.ring').style.setProperty(
-    '--rotation', `${(entries.length * 15) % 360}deg`
-  );
-
-  // Log count
   logCount.textContent = `${entries.length} ${entries.length === 1 ? 'entry' : 'entries'}`;
 
-  // Log list
   if (entries.length === 0) {
-    logList.innerHTML = '<li class="log-empty" id="emptyState">No entries yet</li>';
+    logList.innerHTML = '<li class="log-empty">No entries yet</li>';
     return;
   }
 
-  // Render newest first
   logList.innerHTML = '';
   const reversed = [...entries].reverse();
   reversed.forEach((entry, i) => {
     const li = document.createElement('li');
     li.className = 'log-item';
-    if (i === 0) li.classList.add('new-item');
 
     const dateEl = document.createElement('span');
     dateEl.className = 'log-date';
@@ -81,35 +83,25 @@ function renderAll() {
   });
 }
 
-function updateMonthLabel() {
-  const now = new Date();
-  const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-  monthLabel.textContent = now.toLocaleDateString('en-IL', options);
-}
-
 function formatDate(ts) {
   const d = new Date(ts);
   const day   = String(d.getDate()).padStart(2, '0');
   const month = String(d.getMonth() + 1).padStart(2, '0');
   const year  = d.getFullYear();
-  const hours = String(d.getHours()).padStart(2, '0');
+  const hrs   = String(d.getHours()).padStart(2, '0');
   const mins  = String(d.getMinutes()).padStart(2, '0');
-  return `${day}/${month}/${year}  ${hours}:${mins}`;
+  return `${day}/${month}/${year}  ${hrs}:${mins}`;
 }
 
 // ── Add entry ──
 function addEntry() {
-  const entry = { timestamp: Date.now() };
-  entries.push(entry);
+  entries.push({ timestamp: Date.now() });
   saveData();
   renderAll();
-  flashButton();
-  showToast(`+₪${AMOUNT} added`);
-}
-
-function flashButton() {
+  // Flash green
   totalBtn.classList.add('flash');
   setTimeout(() => totalBtn.classList.remove('flash'), 400);
+  showToast(`+₪${AMOUNT} added`);
 }
 
 // ── Reset ──
@@ -117,7 +109,7 @@ function resetData() {
   entries = [];
   saveData();
   renderAll();
-  showToast('Data reset');
+  showToast('Reset');
 }
 
 // ── Toast ──
@@ -125,115 +117,44 @@ function showToast(msg) {
   clearTimeout(toastTimer);
   toast.textContent = msg;
   toast.classList.add('show');
-  toastTimer = setTimeout(() => toast.classList.remove('show'), 2000);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 1800);
 }
 
-// ── Hold-to-reset logic ──
-function startHold(e) {
-  if (e.type === 'touchstart') e.preventDefault(); // prevent ghost click
-  totalBtn.classList.add('pressed');
-  holdStart = performance.now();
-
-  resetOverlay.classList.add('active');
-  animateReset();
-
-  holdTimer = setTimeout(() => {
-    cancelHold();
-    resetData();
-  }, HOLD_DURATION);
+// ── SVG ring animation ──
+function setRingProgress(pct) {
+  // pct 0→1: stroke-dashoffset goes from CIRCUMFERENCE→0
+  const offset = CIRCUMFERENCE * (1 - pct);
+  resetRingFill.style.strokeDashoffset = offset;
 }
 
-function cancelHold() {
-  clearTimeout(holdTimer);
-  holdTimer = null;
-  holdStart = null;
-  cancelAnimationFrame(holdRafId);
-  totalBtn.classList.remove('pressed');
-  resetOverlay.classList.remove('active');
-  resetProgress.style.transform = 'rotate(0deg)';
+function clearRing() {
+  cancelAnimationFrame(rafId);
+  rafId = null;
+  resetRingFill.style.strokeDashoffset = CIRCUMFERENCE;
 }
 
-function animateReset() {
-  if (!holdStart) return;
-  const elapsed = performance.now() - holdStart;
+function animateRing(startTime) {
+  const elapsed = performance.now() - startTime;
   const pct = Math.min(elapsed / HOLD_DURATION, 1);
-  const deg = pct * 360;
-  resetProgress.style.transform = `rotate(${deg}deg)`;
-  resetProgress.style.borderTopColor = pct > 0.8 ? '#ff4d4d' : '#ff9999';
+  setRingProgress(pct);
   if (pct < 1) {
-    holdRafId = requestAnimationFrame(animateReset);
+    rafId = requestAnimationFrame(() => animateRing(startTime));
   }
 }
 
-// ── Button event listeners ──
-// Touch events (iPhone primary)
-totalBtn.addEventListener('touchstart', startHold, { passive: false });
-totalBtn.addEventListener('touchend', (e) => {
-  e.preventDefault();
-  const wasHolding = holdTimer !== null;
-  cancelHold();
-  // Only add if it was a tap (not a completed hold)
-  const elapsed = holdStart ? performance.now() - holdStart : 0;
-  if (elapsed < 300 || wasHolding) {
-    // short tap = add; if hold completed, resetData already called
-    if (wasHolding) addEntry();
-  }
-});
-totalBtn.addEventListener('touchcancel', cancelHold);
-
-// Mouse events (desktop/testing)
-totalBtn.addEventListener('mousedown', (e) => {
-  holdStart = performance.now();
-  startHoldMouse();
-});
-document.addEventListener('mouseup', (e) => {
-  if (holdTimer || holdStart) {
-    const elapsed = performance.now() - (holdStart || 0);
-    const wasHolding = holdTimer !== null;
-    cancelHold();
-    if (elapsed < 300 || wasHolding) {
-      if (wasHolding) addEntry();
-    }
-  }
-});
-
-let mouseHoldTimer = null;
-function startHoldMouse() {
-  totalBtn.classList.add('pressed');
-  holdStart = performance.now();
-  resetOverlay.classList.add('active');
-  animateReset();
-  holdTimer = setTimeout(() => {
-    cancelHold();
-    resetData();
-  }, HOLD_DURATION);
-}
-
-// Separate simpler approach for touch:
-totalBtn.removeEventListener('touchend', arguments);
-
-// ── Clean re-implementation of touch handler ──
-let touchHoldTimer = null;
-let touchStartTime = null;
-let touchCompleted = false;
-
+// ── Touch handlers ──
 totalBtn.addEventListener('touchstart', function(e) {
   e.preventDefault();
   touchStartTime = performance.now();
   touchCompleted = false;
-  totalBtn.classList.add('pressed');
-  holdStart = touchStartTime;
 
-  resetOverlay.classList.add('active');
-  animateReset();
+  totalBtn.classList.add('pressed');
+  animateRing(touchStartTime);
 
   touchHoldTimer = setTimeout(() => {
     touchCompleted = true;
-    cancelAnimationFrame(holdRafId);
+    clearRing();
     totalBtn.classList.remove('pressed');
-    resetOverlay.classList.remove('active');
-    resetProgress.style.transform = 'rotate(0deg)';
-    holdStart = null;
     resetData();
   }, HOLD_DURATION);
 }, { passive: false });
@@ -241,14 +162,10 @@ totalBtn.addEventListener('touchstart', function(e) {
 totalBtn.addEventListener('touchend', function(e) {
   e.preventDefault();
   clearTimeout(touchHoldTimer);
-  cancelAnimationFrame(holdRafId);
-  const elapsed = performance.now() - (touchStartTime || 0);
+  clearRing();
   totalBtn.classList.remove('pressed');
-  resetOverlay.classList.remove('active');
-  resetProgress.style.transform = 'rotate(0deg)';
-  holdStart = null;
 
-  if (!touchCompleted && elapsed < HOLD_DURATION) {
+  if (!touchCompleted) {
     addEntry();
   }
   touchCompleted = false;
@@ -256,12 +173,41 @@ totalBtn.addEventListener('touchend', function(e) {
 
 totalBtn.addEventListener('touchcancel', function() {
   clearTimeout(touchHoldTimer);
-  cancelAnimationFrame(holdRafId);
+  clearRing();
   totalBtn.classList.remove('pressed');
-  resetOverlay.classList.remove('active');
-  resetProgress.style.transform = 'rotate(0deg)';
-  holdStart = null;
   touchCompleted = false;
+});
+
+// ── Mouse handlers (desktop testing) ──
+let mouseStartTime = null;
+let mouseCompleted = false;
+let mouseHoldTimer = null;
+
+totalBtn.addEventListener('mousedown', function(e) {
+  mouseStartTime = performance.now();
+  mouseCompleted = false;
+  totalBtn.classList.add('pressed');
+  animateRing(mouseStartTime);
+
+  mouseHoldTimer = setTimeout(() => {
+    mouseCompleted = true;
+    clearRing();
+    totalBtn.classList.remove('pressed');
+    resetData();
+  }, HOLD_DURATION);
+});
+
+document.addEventListener('mouseup', function() {
+  if (mouseStartTime === null) return;
+  clearTimeout(mouseHoldTimer);
+  clearRing();
+  totalBtn.classList.remove('pressed');
+
+  if (!mouseCompleted) {
+    addEntry();
+  }
+  mouseStartTime = null;
+  mouseCompleted = false;
 });
 
 // ── Start ──
