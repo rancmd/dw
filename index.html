@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="he" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Money Log" />
+  <title>Money Log</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <div class="app">
+
+    <header class="header">
+      <div class="month-label" id="monthLabel"></div>
+      <div class="subtitle">tap to add · hold to reset</div>
+    </header>
+
+    <main class="main">
+      <button class="total-btn" id="totalBtn" aria-label="Add 20 shekel">
+        <span class="currency">₪</span>
+        <span class="amount" id="totalAmount">0</span>
+      </button>
+
+      <div class="ring-container">
+        <div class="ring" id="progressRing"></div>
+      </div>
+    </main>
+
+    <section class="log-section">
+      <div class="log-header">
+        <span class="log-title">LOG</span>
+        <span class="log-count" id="logCount">0 entries</span>
+      </div>
+      <ul class="log-list" id="logList">
+        <li class="log-empty" id="emptyState">No entries yet</li>
+      </ul>
+    </section>
+
+  </div>
+
+  <div class="toast" id="toast"></div>
+  <div class="reset-overlay" id="resetOverlay">
+    <div class="reset-progress" id="resetProgress"></div>
+    <span class="reset-label">Hold to reset…</span>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
